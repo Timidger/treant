@@ -1,0 +1,8 @@
+[package]
+name = "treant"
+version = "0.1.0"
+authors = ["preston <preston@redstar.com>"]
+description = "A collection of trees implemented without using PetGraph"
+license = "MIT"
+
+[dependencies]
