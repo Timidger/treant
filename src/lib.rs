@@ -1,4 +1,3 @@
-#![feature(unique)]
 mod binary;
 
 #[cfg(test)]
