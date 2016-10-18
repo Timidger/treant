@@ -14,6 +14,7 @@ pub enum Dir {
 }
 
 /// A tree where each node has 0, 1, or 2 children.
+#[derive(Debug)]
 pub struct BinaryTree<T> {
     root: UnsafeCell<BinaryNode<T>>
 }
