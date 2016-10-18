@@ -1,7 +1,5 @@
-use super::view::{BinaryView, BinaryViewMut, BinaryViewInner};
 use std::ptr::null_mut;
 use std::cell::UnsafeCell;
-use std::marker::PhantomData;
 use std::mem;
 
 pub type Child<T> = Option<Box<BinaryNode<T>>>;
@@ -42,6 +40,12 @@ impl <T> BinaryNode<T> {
     /// Gets the value behind the node.
     pub fn value(&self) -> &T {
         &self.value
+    }
+
+    /// Sets the value of the node to the given data.
+    /// Returns the data that was there previously.
+    pub fn set_value(&mut self, data: T) -> T {
+        mem::replace(&mut self.value, data)
     }
 
     /// Gets a reference to the children of this node in the tree.
@@ -96,9 +100,9 @@ impl <T> BinaryTree<T> {
 }
 
 
+#[cfg(tests)]
 mod tests {
     use super::{BinaryTree, BinaryNode, Dir};
-    use super::super::view::*;
     use std::ptr::null_mut;
 
     /// Outputs a binary tree with only one element at the root:
@@ -142,5 +146,34 @@ mod tests {
                         children: (None, None),
                         value: 3
                     }))));
+    }
+
+    #[test]
+    fn unsafe_cell_points_to_root() {
+        let mut empty_t = empty_binary();
+        let tree_ptr = unsafe { empty_t.as_ptr() }.get();
+        {
+            let root_mut = empty_t.root_mut();
+            assert_eq!(tree_ptr, root_mut as *mut _);
+        }
+        {
+            let root = empty_t.root();
+            assert_eq!(tree_ptr as *const _, root as *const _);
+        }
+    }
+
+    #[test]
+    fn value_is_set() {
+        let mut empty_t = empty_binary();
+        {
+            let root = empty_t.root_mut();
+            assert_eq!(*root.value(), 0);
+            assert_eq!(root.set_value(1), 0);
+            assert_eq!(*root.value(), 1);
+            assert_eq!(root.set_value(-1), 1);
+            assert_eq!(*root.value(), -1);
+        }
+        let root = empty_t.root();
+        assert_eq!(*root.value(), -1);
     }
 }
