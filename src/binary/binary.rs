@@ -54,6 +54,15 @@ impl <T> BinaryNode<T> {
         &self.children
     }
 
+    /// Gets a unsafe mutable reference to the parent of the node.
+    ///
+    /// # Safety
+    /// By itself this method is not safe, but the safety of the result is not checked.
+    /// There are no guarantees that the value behind the pointer is valid.
+    pub unsafe fn parent(&self) -> *mut BinaryNode<T> {
+        self.parent
+    }
+
     /// Replaces the left/right child (if any) of this node with the given value.
     /// The previous child (if any) is returned.
     pub fn add_child(&mut self, dir: Dir, data: T) -> Child<T> {

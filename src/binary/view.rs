@@ -1,6 +1,8 @@
-use super::binary::{BinaryNode, BinaryTree};
+use std::ptr::null_mut;
 use std::ops::Deref;
 use std::marker::PhantomData;
+
+use super::binary::{BinaryNode, BinaryTree, Dir};
 
 /// Base view struct. This implements all the main methods used
 /// to traverse the binary tree.
@@ -51,6 +53,48 @@ impl <'a, T: 'a> BinaryView<'a, T> {
                 }
             }
             None
+        }
+    }
+
+    /// Attempts to climb up the tree.
+    ///
+    /// If view is at the root (and thus had no parent),
+    /// an `Err` with the view in its original place is returned.
+    pub fn climb(mut self) -> Result<Self, Self> {
+        if self.0.node == null_mut() {
+            panic!("View pointed to an invalid tree");
+        }
+        unsafe {
+            let node = &*self.0.node;
+            if node.parent() == null_mut() {
+                Err(self)
+            } else {
+                self.0.node = node.parent();
+                Ok(self)
+            }
+        }
+    }
+
+
+    /// Attempts to descend down the tree in some direction.
+    ///
+    /// If the node the view is focused on did not have a child in that
+    /// direction, an `Err` with the view in its original place is returned.
+    pub fn descend(mut self, dir: Dir) -> Result<Self, Self> {
+        if self.0.node == null_mut() {
+            panic!("View pointed to an invalid tree");
+        }
+        unsafe {
+            let node = &*self.0.node;
+            let children = node.children();
+            match (dir, children) {
+                (Dir::Left, &(Some(ref child), _)) |
+                (Dir::Right, &(_, Some(ref child))) => {
+                    self.0.node = &*child as *const _ as *mut _;
+                    Ok(self)
+                },
+                _ => Err(self)
+            }
         }
     }
 }
