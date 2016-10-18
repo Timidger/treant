@@ -30,7 +30,7 @@ impl <'a, T: 'a> BinaryView<'a, T> {
     /// Does not guarantee that this view points to a node in the tree.
     /// IF this view does point to a node in the tree, then this function is safe.
     #[allow(unused_variables)]
-    pub unsafe fn to_mut_unchecked(self, tree: &'a mut BinaryTree<T>) -> BinaryViewMut<'a, T> {
+    pub unsafe fn into_mut_unchecked(self, tree: &'a mut BinaryTree<T>) -> BinaryViewMut<'a, T> {
         BinaryViewMut(self.0)
     }
 
@@ -41,7 +41,7 @@ impl <'a, T: 'a> BinaryView<'a, T> {
     ///
     /// It must check that the given tree is in fact what is being searched.
     /// If this view is not searching the tree, `None` is returned
-    pub fn to_mut(self, tree: &'a mut BinaryTree<T>) -> Option<BinaryViewMut<'a, T>> {
+    pub fn into_mut(self, tree: &'a mut BinaryTree<T>) -> Option<BinaryViewMut<'a, T>> {
         let root_node = tree.root();
         let cur_node = self.0.node;
         unsafe {

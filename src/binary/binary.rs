@@ -132,7 +132,7 @@ mod tests {
                    &(Some(Box::new(BinaryNode{
                        parent: null_parent,
                        children: (None, None),
-                       value: 2 
+                       value: 2
                    })),
                     None));
         root.add_child(Dir::Right, 3);
