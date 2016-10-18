@@ -2,7 +2,18 @@ use super::view::{BinaryView, BinaryViewMut, BinaryViewInner};
 use std::ptr::null_mut;
 use std::cell::UnsafeCell;
 use std::marker::PhantomData;
+use std::mem;
 
+pub type Child<T> = Option<Box<BinaryNode<T>>>;
+pub type Children<T> = (Child<T>, Child<T>);
+
+/// The direction in the tree to go.
+/// Left refers to the first element.
+/// Right refers to the second element.
+pub enum Dir {
+    Left,
+    Right
+}
 
 /// A tree where each node has 0, 1, or 2 children.
 pub struct BinaryTree<T> {
@@ -11,9 +22,10 @@ pub struct BinaryTree<T> {
 
 /// A node that has 0, 1, or 2 children and maybe a parent.
 /// If the node has no parent, it is the root of the tree.
+#[derive(Debug, Eq, PartialEq)]
 pub struct BinaryNode<T> {
     parent: *mut BinaryNode<T>,
-    children: (Option<Box<BinaryNode<T>>>, Option<Box<BinaryNode<T>>>),
+    children: Children<T>,
     value: T
 }
 
@@ -25,6 +37,27 @@ impl <T> BinaryNode<T> {
             children: (None, None),
             value: value
         }
+    }
+
+    /// Gets the value behind the node.
+    pub fn value(&self) -> &T {
+        &self.value
+    }
+
+    /// Gets a reference to the children of this node in the tree.
+    pub fn children(&self) -> &Children<T> {
+        &self.children
+    }
+
+    /// Replaces the left/right child (if any) of this node with the given value.
+    /// The previous child (if any) is returned.
+    pub fn add_child(&mut self, dir: Dir, data: T) -> Child<T> {
+        let new_node = Box::new(BinaryNode::new(data));
+        let child = match dir {
+            Dir::Left  => &mut self.children.0,
+            Dir::Right => &mut self.children.1
+        };
+        mem::replace(child, Some(new_node))
     }
 }
 
@@ -59,5 +92,55 @@ impl <T> BinaryTree<T> {
         unsafe {
             (self.root.get()).as_mut().expect("Binary tree had no root node")
         }
+    }
+}
+
+
+mod tests {
+    use super::{BinaryTree, BinaryNode, Dir};
+    use super::super::view::*;
+    use std::ptr::null_mut;
+
+    /// Outputs a binary tree with only one element at the root:
+    /// a node with `0` as its value.
+    fn empty_binary() -> BinaryTree<i32> {
+        BinaryTree::new(0)
+    }
+
+    #[test]
+    fn adding_to_tree() {
+        let mut empty_t = empty_binary();
+        let root = empty_t.root_mut();
+        let null_parent = null_mut();
+        assert_eq!(root.children(), &(None, None));
+
+        root.add_child(Dir::Left, 1);
+        assert_eq!(root.children(),
+                   &(Some(Box::new(BinaryNode {
+                       parent: null_parent,
+                       children: (None, None),
+                       value: 1
+                   })),
+                    None));
+        root.add_child(Dir::Left, 2);
+        assert_eq!(root.children(),
+                   &(Some(Box::new(BinaryNode{
+                       parent: null_parent,
+                       children: (None, None),
+                       value: 2 
+                   })),
+                    None));
+        root.add_child(Dir::Right, 3);
+        assert_eq!(root.children(),
+                   &(Some(Box::new(BinaryNode{
+                       parent: null_parent,
+                       children: (None, None),
+                       value: 2
+                   })),
+                    Some(Box::new(BinaryNode{
+                        parent: null_parent,
+                        children: (None, None),
+                        value: 3
+                    }))));
     }
 }
