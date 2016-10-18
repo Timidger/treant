@@ -22,10 +22,36 @@ impl <'a, T: 'a> BinaryView<'a, T> {
             data: PhantomData::default()
         })
     }
+
     /// Mutably borrows the tree, converting the view into a mutable view.
     /// The position within the tree is preserved.
-    pub fn to_mut(self, tree: &'a mut BinaryTree<T>) -> BinaryViewMut<'a, T> {
+    ///
+    /// # Safety
+    /// Does not guarantee that this view points to a node in the tree.
+    /// IF this view does point to a node in the tree, then this function is safe.
+    #[allow(unused_variables)]
+    pub unsafe fn to_mut_unchecked(self, tree: &'a mut BinaryTree<T>) -> BinaryViewMut<'a, T> {
         BinaryViewMut(self.0)
+    }
+
+    /// Mutably borrows the tree, converting the view into a mutable view.
+    /// The position within the tree is preserved.
+    ///
+    /// Time complexity: O(k), where k = height of the tree.
+    ///
+    /// It must check that the given tree is in fact what is being searched.
+    /// If this view is not searching the tree, `None` is returned
+    pub fn to_mut(self, tree: &'a mut BinaryTree<T>) -> Option<BinaryViewMut<'a, T>> {
+        let root_node = tree.root();
+        let cur_node = self.0.node;
+        unsafe {
+            while let Some(cur_node) = cur_node.as_ref() {
+                if cur_node as *const _ == root_node as *const _ {
+                    return Some(BinaryViewMut(self.0))
+                }
+            }
+            None
+        }
     }
 }
 
