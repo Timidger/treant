@@ -91,16 +91,56 @@ impl <'tree, T: 'tree> BinaryView<'tree, T> {
         let old_node = self.0.node;
         let root_node = tree.root();
         loop {
-            if self.0.node as *const _ == root_node as *const _ {
+            if self.node as *const _ == root_node as *const _ {
                 self.0.node = old_node;
                 return Ok(BinaryViewMut(self.0))
             }
-            self.0 = match self.0.climb() {
+            self = match self.climb() {
                 Ok(this) => this,
                 Err(mut this) => {
-                    this.node = old_node;
-                    return Err(BinaryView(this))
+                    this.0.node = old_node;
+                    return Err(this)
                 }
+            }
+        }
+    }
+
+    /// Get a mutable reference to the node that the view points to.
+    pub fn node(&mut self) -> &mut BinaryNode<T> {
+        unsafe {
+            self.node.as_mut()
+                .expect("View pointed to invalid BinaryNode")
+        }
+    }
+
+    /// Attempts to climb the tree.
+    ///
+    /// This is a wrapper, please see the method on `BinaryViewInner` for more details
+    pub fn climb(mut self) -> Result<Self, Self> {
+        match self.0.climb() {
+            Ok(node) => {
+                self.0 = node;
+                Ok(self)
+            },
+            Err(node) => {
+                self.0 = node;
+                Err(self)
+            }
+        }
+    }
+
+    /// Attempts to descend down the tree in some direction.
+    ///
+    /// This is a wrapper, please see the method on `BinaryViewInner` for more details
+    pub fn descend(mut self, dir: Dir) -> Result<Self, Self> {
+        match self.0.descend(dir) {
+            Ok(node) => {
+                self.0 = node;
+                Ok(self)
+            },
+            Err(node) => {
+                self.0 = node;
+                Err(self)
             }
         }
     }
