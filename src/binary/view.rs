@@ -91,7 +91,7 @@ impl <'tree, T: 'tree> BinaryView<'tree, T> {
         let old_node = self.0.node;
         let root_node = tree.root();
         loop {
-            if self.node as *const _ == root_node as *const _ {
+            if self.0.node as *const _ == root_node as *const _ {
                 self.0.node = old_node;
                 return Ok(BinaryViewMut(self.0))
             }
@@ -108,7 +108,7 @@ impl <'tree, T: 'tree> BinaryView<'tree, T> {
     /// Get a mutable reference to the node that the view points to.
     pub fn node(&mut self) -> &mut BinaryNode<T> {
         unsafe {
-            self.node.as_mut()
+            self.0.node.as_mut()
                 .expect("View pointed to invalid BinaryNode")
         }
     }
@@ -155,16 +155,3 @@ impl <'tree, T: 'tree> BinaryViewMut<'tree, T> {
     }
 }
 
-impl <'tree, T: 'tree> Deref for BinaryView<'tree, T> {
-    type Target = BinaryViewInner<'tree, T>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl <'tree, T: 'tree> Deref for BinaryViewMut<'tree, T> {
-    type Target = BinaryViewInner<'tree, T>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
