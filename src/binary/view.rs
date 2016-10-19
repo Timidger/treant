@@ -46,18 +46,16 @@ impl <'tree, T: 'tree> BinaryView<'tree, T> {
     pub fn into_mut(mut self, tree: &'tree mut BinaryTree<T>) -> Result<BinaryViewMut<'tree, T>, BinaryView<'tree, T>> {
         let old_node = self.0.node;
         let root_node = tree.root();
-        unsafe {
-            loop {
-                if self.0.node as *const _ == root_node as *const _ {
-                    self.0.node = old_node;
-                    return Ok(BinaryViewMut(self.0))
-                }
-                self = match self.climb() {
-                    Ok(this) => this,
-                    Err(mut this) => {
-                        this.0.node = old_node;
-                        return Err(this)
-                    }
+        loop {
+            if self.0.node as *const _ == root_node as *const _ {
+                self.0.node = old_node;
+                return Ok(BinaryViewMut(self.0))
+            }
+            self = match self.climb() {
+                Ok(this) => this,
+                Err(mut this) => {
+                    this.0.node = old_node;
+                    return Err(this)
                 }
             }
         }
