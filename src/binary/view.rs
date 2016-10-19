@@ -6,19 +6,19 @@ use super::binary::{BinaryNode, BinaryTree, Dir};
 
 /// Base view struct. This implements all the main methods used
 /// to traverse the binary tree.
-pub struct BinaryViewInner<'a, T: 'a>{
+pub struct BinaryViewInner<'tree, T: 'tree>{
     node: *mut BinaryNode<T>,
-    data: PhantomData<&'a T>
+    data: PhantomData<&'tree T>
 }
 
 /// Immutable binary tree view.
-pub struct BinaryView<'a, T: 'a>(BinaryViewInner<'a, T>);
+pub struct BinaryView<'tree, T: 'tree>(BinaryViewInner<'tree, T>);
 /// Mutable binary tree view.
 /// There should be only one of these at any given time.
-pub struct BinaryViewMut<'a, T:'a>(BinaryViewInner<'a, T>);
+pub struct BinaryViewMut<'tree, T:'tree>(BinaryViewInner<'tree, T>);
 
-impl <'a, T: 'a> BinaryView<'a, T> {
-    pub fn new(tree: &'a BinaryTree<T>) -> Self {
+impl <'tree, T: 'tree> BinaryView<'tree, T> {
+    pub fn new(tree: &'tree BinaryTree<T>) -> Self {
         BinaryView(BinaryViewInner {
             node: unsafe { tree.as_ptr().get() },
             data: PhantomData::default()
@@ -32,7 +32,7 @@ impl <'a, T: 'a> BinaryView<'a, T> {
     /// Does not guarantee that this view points to a node in the tree.
     /// IF this view does point to a node in the tree, then this function is safe.
     #[allow(unused_variables)]
-    pub unsafe fn into_mut_unchecked(self, tree: &'a mut BinaryTree<T>) -> BinaryViewMut<'a, T> {
+    pub unsafe fn into_mut_unchecked(self, tree: &'tree mut BinaryTree<T>) -> BinaryViewMut<'tree, T> {
         BinaryViewMut(self.0)
     }
 
@@ -105,8 +105,8 @@ impl <'a, T: 'a> BinaryView<'a, T> {
     }
 }
 
-impl <'a, T: 'a> BinaryViewMut<'a, T> {
-    pub fn new(tree: &'a mut BinaryTree<T>) -> Self {
+impl <'tree, T: 'tree> BinaryViewMut<'tree, T> {
+    pub fn new(tree: &'tree mut BinaryTree<T>) -> Self {
         BinaryViewMut(BinaryViewInner {
             node: unsafe { tree.as_ptr().get() },
             data: PhantomData::default()
@@ -114,15 +114,15 @@ impl <'a, T: 'a> BinaryViewMut<'a, T> {
     }
 }
 
-impl <'a, T: 'a> Deref for BinaryView<'a, T> {
-    type Target = BinaryViewInner<'a, T>;
+impl <'tree, T: 'tree> Deref for BinaryView<'tree, T> {
+    type Target = BinaryViewInner<'tree, T>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl <'a, T: 'a> Deref for BinaryViewMut<'a, T> {
-    type Target = BinaryViewInner<'a, T>;
+impl <'tree, T: 'tree> Deref for BinaryViewMut<'tree, T> {
+    type Target = BinaryViewInner<'tree, T>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
