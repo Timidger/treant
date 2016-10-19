@@ -17,6 +17,50 @@ pub struct BinaryView<'tree, T: 'tree>(BinaryViewInner<'tree, T>);
 /// There should be only one of these at any given time.
 pub struct BinaryViewMut<'tree, T:'tree>(BinaryViewInner<'tree, T>);
 
+impl <'tree, T: 'tree> BinaryViewInner<'tree, T> {
+    /// Attempts to climb up the tree.
+    ///
+    /// If view is at the root (and thus had no parent),
+    /// an `Err` with the view in its original place is returned.
+    pub fn climb(mut self) -> Result<Self, Self> {
+        if self.node == null_mut() {
+            panic!("View pointed to an invalid tree");
+        }
+        unsafe {
+            let node = &*self.node;
+            if node.parent() == null_mut() {
+                Err(self)
+            } else {
+                self.node = node.parent();
+                Ok(self)
+            }
+        }
+    }
+
+
+    /// Attempts to descend down the tree in some direction.
+    ///
+    /// If the node the view is focused on did not have a child in that
+    /// direction, an `Err` with the view in its original place is returned.
+    pub fn descend(mut self, dir: Dir) -> Result<Self, Self> {
+        if self.node == null_mut() {
+            panic!("View pointed to an invalid tree");
+        }
+        unsafe {
+            let node = &*self.node;
+            let children = node.children();
+            match (dir, children) {
+                (Dir::Left, &(Some(ref child), _)) |
+                (Dir::Right, &(_, Some(ref child))) => {
+                    self.node = &*child as *const _ as *mut _;
+                    Ok(self)
+                },
+                _ => Err(self)
+            }
+        }
+    }
+}
+
 impl <'tree, T: 'tree> BinaryView<'tree, T> {
     pub fn new(tree: &'tree BinaryTree<T>) -> Self {
         BinaryView(BinaryViewInner {
@@ -51,54 +95,12 @@ impl <'tree, T: 'tree> BinaryView<'tree, T> {
                 self.0.node = old_node;
                 return Ok(BinaryViewMut(self.0))
             }
-            self = match self.climb() {
+            self.0 = match self.0.climb() {
                 Ok(this) => this,
                 Err(mut this) => {
-                    this.0.node = old_node;
-                    return Err(this)
+                    this.node = old_node;
+                    return Err(BinaryView(this))
                 }
-            }
-        }
-    }
-
-    /// Attempts to climb up the tree.
-    ///
-    /// If view is at the root (and thus had no parent),
-    /// an `Err` with the view in its original place is returned.
-    pub fn climb(mut self) -> Result<Self, Self> {
-        if self.0.node == null_mut() {
-            panic!("View pointed to an invalid tree");
-        }
-        unsafe {
-            let node = &*self.0.node;
-            if node.parent() == null_mut() {
-                Err(self)
-            } else {
-                self.0.node = node.parent();
-                Ok(self)
-            }
-        }
-    }
-
-
-    /// Attempts to descend down the tree in some direction.
-    ///
-    /// If the node the view is focused on did not have a child in that
-    /// direction, an `Err` with the view in its original place is returned.
-    pub fn descend(mut self, dir: Dir) -> Result<Self, Self> {
-        if self.0.node == null_mut() {
-            panic!("View pointed to an invalid tree");
-        }
-        unsafe {
-            let node = &*self.0.node;
-            let children = node.children();
-            match (dir, children) {
-                (Dir::Left, &(Some(ref child), _)) |
-                (Dir::Right, &(_, Some(ref child))) => {
-                    self.0.node = &*child as *const _ as *mut _;
-                    Ok(self)
-                },
-                _ => Err(self)
             }
         }
     }
