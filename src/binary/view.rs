@@ -48,7 +48,8 @@ impl <'tree, T: 'tree> BinaryView<'tree, T> {
         let root_node = tree.root();
         unsafe {
             loop {
-                if &*self.0.node as *const _ == root_node as *const _ {
+                if self.0.node as *const _ == root_node as *const _ {
+                    self.0.node = old_node;
                     return Ok(BinaryViewMut(self.0))
                 }
                 self = match self.climb() {
