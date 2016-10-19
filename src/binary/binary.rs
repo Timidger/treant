@@ -110,7 +110,7 @@ impl <T> BinaryTree<T> {
 }
 
 
-#[cfg(tests)]
+#[cfg(test)]
 mod tests {
     use super::{BinaryTree, BinaryNode, Dir};
     use std::ptr::null_mut;
