@@ -66,12 +66,14 @@ impl <T> BinaryNode<T> {
     /// Replaces the left/right child (if any) of this node with the given value.
     /// The previous child (if any) is returned.
     pub fn add_child(&mut self, dir: Dir, data: T) -> Child<T> {
-        let new_node = Box::new(BinaryNode::new(data));
+        let mut new_node = BinaryNode::new(data);
+        new_node.parent = self as *mut _;
+        let node = Box::new(new_node);
         let child = match dir {
             Dir::Left  => &mut self.children.0,
             Dir::Right => &mut self.children.1
         };
-        mem::replace(child, Some(new_node))
+        mem::replace(child, Some(node))
     }
 }
 
@@ -125,13 +127,13 @@ mod tests {
     fn adding_to_tree() {
         let mut empty_t = empty_binary();
         let root = empty_t.root_mut();
-        let null_parent = null_mut();
+        let root_ptr = root as *mut _;
         assert_eq!(root.children(), &(None, None));
 
         root.add_child(Dir::Left, 1);
         assert_eq!(root.children(),
                    &(Some(Box::new(BinaryNode {
-                       parent: null_parent,
+                       parent: root_ptr,
                        children: (None, None),
                        value: 1
                    })),
@@ -139,7 +141,7 @@ mod tests {
         root.add_child(Dir::Left, 2);
         assert_eq!(root.children(),
                    &(Some(Box::new(BinaryNode{
-                       parent: null_parent,
+                       parent: root_ptr,
                        children: (None, None),
                        value: 2
                    })),
@@ -147,12 +149,12 @@ mod tests {
         root.add_child(Dir::Right, 3);
         assert_eq!(root.children(),
                    &(Some(Box::new(BinaryNode{
-                       parent: null_parent,
+                       parent: root_ptr,
                        children: (None, None),
                        value: 2
                    })),
                     Some(Box::new(BinaryNode{
-                        parent: null_parent,
+                        parent: root_ptr,
                         children: (None, None),
                         value: 3
                     }))));
@@ -185,5 +187,15 @@ mod tests {
         }
         let root = empty_t.root();
         assert_eq!(*root.value(), -1);
+    }
+
+    #[test]
+    fn get_parent_test() {
+        let mut empty_t = empty_binary();
+        let root = empty_t.root_mut();
+        root.add_child(Dir::Left, 1);
+        let child = &root.children().0.as_ref();
+        let parent_ptr = unsafe { &child.map(|node| node.parent() as *const _ )};
+        assert_eq!(parent_ptr.unwrap(), root as *const _);
     }
 }
